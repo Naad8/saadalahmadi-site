@@ -19,7 +19,7 @@
 <main><div class="wrap"><div id="gate" class="gate">
 <h2>الحقيبة الرقمية</h2>
 <p>أدخل رمز الحقيبة المطبوع في آخر الكتاب، في صفحة «الوصول إلى حقيبة الأدوات الرقمية».</p>
-<form id="gform" autocomplete="off"><input id="code" placeholder="الرمز" aria-label="رمز الحقيبة"><div class="err" id="err"></div>
+<form id="gform" autocomplete="off"><input id="code" placeholder="APM-2026" aria-label="رمز الحقيبة" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text"><div class="err" id="err"></div>
 <button class="btn solid" type="submit">دخول</button></form>
 </div>
 <div id="kit" class="hidden">
@@ -60,13 +60,22 @@
 </div></main>
 <script>
 const H="173c934cc9705e9f32639448bc86706e4fb6dc99e696265cc79131beccdad040";
-async function sha(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
-function openKit(){document.getElementById("gate").classList.add("hidden");document.getElementById("kit").classList.remove("hidden")}
+function sha256(m){function r(n,x){return(x>>>n)|(x<<(32-n))}var K=[],H=[],i,j,p=2;for(i=0;i<64;p++){for(j=2;j*j<=p;j++)if(p%j===0)break;if(j*j>p){if(i<8)H[i]=(Math.pow(p,.5)*4294967296)|0;K[i++]=(Math.pow(p,1/3)*4294967296)|0}}
+var b=unescape(encodeURIComponent(m)),l=b.length*8,w=[];b+="\x80";while(b.length%64-56)b+="\x00";for(i=0;i<b.length;i++)w[i>>2]|=b.charCodeAt(i)<<((3-i%4)*8);w[w.length]=(l/4294967296)|0;w[w.length]=l;
+for(j=0;j<w.length;j+=16){var a=H.slice(0),W=w.slice(j,j+16);for(i=0;i<64;i++){if(i>15){var x=W[i-15],y=W[i-2];W[i]=(W[i-16]+(r(7,x)^r(18,x)^(x>>>3))+W[i-7]+(r(17,y)^r(19,y)^(y>>>10)))|0}
+var t1=(a[7]+(r(6,a[4])^r(11,a[4])^r(25,a[4]))+((a[4]&a[5])^(~a[4]&a[6]))+K[i]+W[i])|0,t2=((r(2,a[0])^r(13,a[0])^r(22,a[0]))+((a[0]&a[1])^(a[0]&a[2])^(a[1]&a[2])))|0;a=[(t1+t2)|0].concat(a);a[4]=(a[4]+t1)|0;a.pop()}
+for(i=0;i<8;i++)H[i]=(H[i]+a[i])|0}var o="";for(i=0;i<8;i++)o+=("00000000"+(H[i]>>>0).toString(16)).slice(-8);return o}
+function norm(v){v=(v||"").replace(/[\u0660-\u0669]/g,function(c){return String(c.charCodeAt(0)-0x660)}).replace(/[\u06F0-\u06F9]/g,function(c){return String(c.charCodeAt(0)-0x6F0)});
+v=v.toUpperCase().replace(/[\s\u200e\u200f]+/g,"").replace(/[\u2010-\u2015\u2212\u0640_]/g,"-");if(/^APM\d{4}$/.test(v))v="APM-"+v.slice(3);return v}
+function openKit(){document.getElementById("gate").classList.add("hidden");document.getElementById("kit").classList.remove("hidden");window.scrollTo(0,0)}
 try{if(localStorage.getItem("pms-kit")===H)openKit()}catch(e){}
-document.getElementById("gform").addEventListener("submit",async e=>{e.preventDefault();
- const v=document.getElementById("code").value.trim().toUpperCase().replace(/\s+/g,"");
- if(await sha(v)===H){try{localStorage.setItem("pms-kit",H)}catch(e){}openKit()}
- else document.getElementById("err").textContent="الرمز غير صحيح. تأكد منه كما هو مطبوع في الكتاب.";});
+function tryCode(e){if(e)e.preventDefault();var err=document.getElementById("err");
+ try{var v=norm(document.getElementById("code").value);
+  if(sha256(v)===H){try{localStorage.setItem("pms-kit",H)}catch(x){}openKit()}
+  else err.textContent="الرمز غير صحيح. اكتبه كما هو مطبوع في الكتاب: APM-2026";}
+ catch(x){err.textContent="حدث خطأ في المتصفح، حدّث الصفحة وحاول مرة أخرى."}
+ return false}
+document.getElementById("gform").addEventListener("submit",tryCode);
 let g="all";const q=document.getElementById("q");
 function filt(){const s=q.value.trim();document.querySelectorAll(".tool").forEach(t=>{const ok=(g==="all"||t.dataset.g===g)&&(!s||t.dataset.s.includes(s)||t.dataset.s.toLowerCase().includes(s.toLowerCase()));t.style.display=ok?"":"none"})}
 document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");g=c.dataset.g;filt()}));
